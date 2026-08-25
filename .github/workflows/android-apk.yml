@@ -9,11 +9,17 @@ on:
 permissions:
   contents: read
 
+# APK builds are expensive. If a newer commit arrives while an older APK is
+# still compiling, cancel the obsolete build instead of queueing/running both.
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-apk:
     name: Build Android debug APK
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
 
     steps:
       - name: Checkout repository
@@ -24,16 +30,17 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: package.json
+          cache-dependency-path: package-lock.json
 
-      - name: Setup Java 17
+      - name: Setup Java 17 + Gradle cache
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
+          cache: gradle
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --prefer-offline --no-audit
 
       - name: Type check
         run: npm run typecheck
@@ -43,9 +50,11 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
+        env:
+          GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true -Dorg.gradle.jvmargs=-Xmx4g
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon --parallel --build-cache --console=plain
 
       - name: Prepare versioned APK
         shell: bash
@@ -68,6 +77,7 @@ jobs:
           path: dist/${{ env.APK_NAME }}
           if-no-files-found: error
           retention-days: 90
+          compression-level: 0
 
       - name: Build summary
         run: |
