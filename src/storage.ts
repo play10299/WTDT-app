@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type RepeatRule = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 export type ReminderRule = 'none' | 'at_time' | '10m' | '30m' | '1h' | '1d';
+export type MemberRole = 'owner' | 'editor' | 'viewer';
 
 export type CalendarItem = {
   id: string;
@@ -9,6 +10,15 @@ export type CalendarItem = {
   color: string;
   enabled: boolean;
   shared?: boolean;
+  inviteCode?: string;
+};
+
+export type CalendarMember = {
+  id: string;
+  calendarId: string;
+  name: string;
+  role: MemberRole;
+  avatarText?: string;
 };
 
 export type EventItem = {
@@ -26,7 +36,8 @@ export type EventItem = {
 };
 
 const EVENTS_KEY = '@wtdt/events/v2';
-const CALENDARS_KEY = '@wtdt/calendars/v1';
+const CALENDARS_KEY = '@wtdt/calendars/v2';
+const MEMBERS_KEY = '@wtdt/members/v1';
 
 async function loadArray<T>(key: string, fallback: T[]): Promise<T[]> {
   try {
@@ -53,4 +64,12 @@ export function loadCalendars(fallback: CalendarItem[]) {
 
 export function saveCalendars(calendars: CalendarItem[]) {
   return AsyncStorage.setItem(CALENDARS_KEY, JSON.stringify(calendars));
+}
+
+export function loadMembers(fallback: CalendarMember[]) {
+  return loadArray(MEMBERS_KEY, fallback);
+}
+
+export function saveMembers(members: CalendarMember[]) {
+  return AsyncStorage.setItem(MEMBERS_KEY, JSON.stringify(members));
 }
