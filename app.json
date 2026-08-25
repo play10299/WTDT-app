@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "星火日曆",
+    "slug": "wtdt-spark-calendar",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "android": { "package": "com.wtdt.sparkcalendar" },
+    "ios": { "bundleIdentifier": "com.wtdt.sparkcalendar", "supportsTablet": true }
+  }
+}
