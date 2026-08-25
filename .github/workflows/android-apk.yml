@@ -47,25 +47,38 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      - name: Prepare APK
+      - name: Prepare versioned APK
+        shell: bash
         run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          SHORT_SHA="${GITHUB_SHA::7}"
+          ARTIFACT_NAME="WTDT-Spark-Calendar-v${VERSION}-build${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
+          APK_NAME="${ARTIFACT_NAME}.apk"
           mkdir -p dist
-          cp android/app/build/outputs/apk/debug/app-debug.apk dist/WTDT-Spark-Calendar-debug.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk "dist/${APK_NAME}"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+          echo "SHORT_SHA=${SHORT_SHA}" >> "$GITHUB_ENV"
+          echo "ARTIFACT_NAME=${ARTIFACT_NAME}" >> "$GITHUB_ENV"
+          echo "APK_NAME=${APK_NAME}" >> "$GITHUB_ENV"
 
-      - name: Upload APK artifact
+      - name: Upload versioned APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: WTDT-Spark-Calendar-APK
-          path: dist/WTDT-Spark-Calendar-debug.apk
+          name: ${{ env.ARTIFACT_NAME }}
+          path: dist/${{ env.APK_NAME }}
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 90
 
       - name: Build summary
         run: |
           echo "## WTDT 星火日曆 Android 測試版" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "APK 已建立完成，可從本次 Actions 的 Artifacts 下載 **WTDT-Spark-Calendar-APK**。" >> "$GITHUB_STEP_SUMMARY"
+          echo "本次 APK 已獨立保存到 Actions Artifacts。" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "- 類型：Debug APK" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Commit：\`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 版本：v${VERSION}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Build：#${GITHUB_RUN_NUMBER}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit：\`${SHORT_SHA}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Artifact：\`${ARTIFACT_NAME}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- APK：\`${APK_NAME}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 保存期限：90 天" >> "$GITHUB_STEP_SUMMARY"
           echo "- 安裝：Android 允許安裝未知來源後，可直接安裝 APK 測試。" >> "$GITHUB_STEP_SUMMARY"
